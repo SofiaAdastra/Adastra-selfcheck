@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kurzfristhandel Entscheidungsgeschwindigkeit – Self-Check</title>
+<meta name="description" content="Zehn Fragen dazu, wie schnell Sie von einer geänderten Prognose zu einer nachvollziehbaren Entscheidung kommen. Dauert ca. zehn Minuten.">
+<style>
+/* ============================================================
+   ANNEX 11 SELF-CHECK
+   Single file. No external requests, no cookies, no tracking.
+   Configuration lives in the CONFIG block near the bottom.
+   ============================================================ */
+
+:root{
+  --paper:#F5F7F6;
+  --card:#FFFFFF;
+  --ink:#17282E;
+  --ink-2:#4C5F65;
+  --ink-3:#7C8C90;
+  --rule:#CBD4D2;
+  --rule-soft:#E4E9E7;
+  --signal:#C0202A;          /* overridden by CONFIG.accent */
+  --good:#2E6F4E;
+  --warn:#9A6B12;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:17px;
+  line-height:1.5;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 20px 80px}
+
+/* ---------- document header ---------- */
+.masthead{
+  border-bottom:1px solid var(--rule);
+  background:var(--card);
+}
+.masthead-in{
+  max-width:720px;margin:0 auto;padding:18px 20px;
+  display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
+.masthead h1{
+  font-family:var(--serif);
+  font-size:20px;font-weight:400;margin:0;letter-spacing:-.01em;
+}
+.masthead .org{font-size:13px;color:var(--ink-3)}
+.masthead img{max-height:26px;width:auto;display:block}
+
+/* ---------- progress strip: the instrument ---------- */
+.strip-hold{
+  position:sticky;top:0;z-index:20;
+  background:var(--paper);
+  border-bottom:1px solid var(--rule-soft);
+  padding:12px 0 10px;
+}
+.strip-in{max-width:720px;margin:0 auto;padding:0 20px}
+.strip{display:flex;gap:4px;align-items:flex-end}
+.seg{
+  flex:1;position:relative;border:0;padding:0;margin:0;background:none;
+  cursor:default;font:inherit;
+}
+.seg-bar{
+  height:26px;background:var(--rule-soft);
+  border-bottom:2px solid var(--rule);
+  position:relative;overflow:hidden;
+}
+.seg-fill{position:absolute;left:0;right:0;bottom:0;height:0;background:var(--ink);transition:height .18s ease}
+.seg[data-v="2"] .seg-fill{height:100%}
+.seg[data-v="1"] .seg-fill{height:50%}
+.seg[data-v="0"] .seg-fill{height:3px;background:var(--signal)}
+.seg[data-cur="1"] .seg-bar{border-bottom-color:var(--signal);border-bottom-width:3px}
+.seg[data-answered="1"]{cursor:pointer}
+.seg-n{display:block;font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:4px;text-align:center}
+.seg-c{position:absolute;top:-7px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--ink-3)}
+.strip-key{
+  display:flex;justify-content:space-between;gap:12px;
+  font-size:12px;color:var(--ink-3);margin-top:8px;
+}
+
+/* ---------- panels ---------- */
+.panel{display:none}
+.panel.on{display:block}
+
+/* ---------- intro ---------- */
+.lede{font-family:var(--serif);font-size:30px;line-height:1.25;margin:44px 0 16px;letter-spacing:-.015em;max-width:17ch}
+.intro p{max-width:62ch;color:var(--ink-2);margin:0 0 14px}
+.intro p strong{color:var(--ink);font-weight:600}
+.facts{
+  margin:28px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+}
+.fact{display:flex;gap:16px;padding:11px 0;border-bottom:1px solid var(--rule-soft);font-size:15px}
+.fact:last-child{border-bottom:0}
+.fact dt{flex:0 0 122px;color:var(--ink-3);margin:0}
+.fact dd{margin:0;color:var(--ink-2)}
+.field{margin:26px 0 6px}
+.field label{display:block;font-size:14px;color:var(--ink-2);margin-bottom:6px}
+input[type=text],input[type=email]{
+  width:100%;max-width:420px;padding:11px 12px;font:inherit;font-size:16px;
+  border:1px solid var(--rule);background:var(--card);color:var(--ink);border-radius:2px;
+}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.hint{font-size:13px;color:var(--ink-3);margin:6px 0 0;max-width:62ch}
+
+/* ---------- question ---------- */
+.qhead{display:flex;align-items:baseline;gap:12px;margin:38px 0 0;flex-wrap:wrap}
+.qnum{font-family:var(--mono);font-size:13px;color:var(--ink-3)}
+.qtag{
+  font-size:12px;color:var(--signal);border:1px solid currentColor;
+  padding:1px 7px;border-radius:999px;
+}
+.q{font-family:var(--serif);font-size:27px;line-height:1.28;margin:12px 0 10px;letter-spacing:-.012em;max-width:26ch}
+.qsub{color:var(--ink-2);margin:0 0 22px;max-width:62ch}
+
+.opts{display:flex;flex-direction:column;gap:8px;margin:0 0 22px}
+.opt{
+  display:flex;gap:14px;align-items:flex-start;text-align:left;width:100%;
+  background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--rule);
+  padding:14px 16px;font:inherit;color:var(--ink);cursor:pointer;border-radius:2px;
+  transition:border-color .12s ease,background .12s ease;
+}
+.opt:hover{border-color:var(--ink-3)}
+.opt[aria-checked="true"]{border-color:var(--ink);border-left-color:var(--signal);background:#fff}
+.opt-v{
+  flex:0 0 26px;height:26px;border:1px solid var(--rule);border-radius:50%;
+  font-family:var(--mono);font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);
+}
+.opt[aria-checked="true"] .opt-v{background:var(--ink);border-color:var(--ink);color:#fff}
+.opt-t{flex:1;font-size:15.5px;line-height:1.45}
+.opt-k{flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--ink-3);padding-top:5px}
+
+.aside{border-left:2px solid var(--rule);padding:2px 0 2px 16px;margin:0 0 10px;max-width:62ch}
+.aside p{margin:0 0 6px;font-size:14.5px;color:var(--ink-2)}
+.aside p:last-child{margin-bottom:0}
+.aside .said{font-family:var(--serif);font-style:italic;color:var(--ink)}
+.clause{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-top:14px}
+
+/* ---------- nav ---------- */
+.nav{display:flex;gap:10px;align-items:center;margin:30px 0 0;flex-wrap:wrap}
+.btn{
+  font:inherit;font-size:15px;padding:11px 20px;border-radius:2px;cursor:pointer;
+  border:1px solid var(--ink);background:var(--ink);color:#fff;
+}
+.btn:hover{background:#0F1D22}
+.btn[disabled]{opacity:.35;cursor:not-allowed}
+.btn-q{background:none;color:var(--ink);border-color:var(--rule)}
+.btn-q:hover{background:none;border-color:var(--ink)}
+.btn-sig{background:var(--signal);border-color:var(--signal)}
+.btn-sig:hover{background:var(--signal);filter:brightness(.92)}
+.navnote{font-size:13px;color:var(--ink-3);margin-left:auto}
+
+/* ---------- results ---------- */
+.readout{margin:40px 0 0}
+.score-row{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.score-n{font-family:var(--mono);font-size:64px;line-height:.9;letter-spacing:-.03em}
+.score-of{font-family:var(--mono);font-size:19px;color:var(--ink-3);padding-bottom:6px}
+.score-band{font-family:var(--serif);font-size:23px;padding-bottom:4px}
+.scale{margin:24px 0 6px;position:relative;height:34px}
+.scale-track{position:absolute;left:0;right:0;top:12px;height:8px;display:flex;gap:2px}
+.scale-track span{flex:1;background:var(--rule-soft)}
+.scale-track span.lit{background:var(--ink)}
+.scale-marks{position:relative;height:34px}
+.mark{position:absolute;top:0;transform:translateX(-50%);text-align:center;font-size:11px;color:var(--ink-3);font-family:var(--mono)}
+.mark i{display:block;width:1px;height:20px;background:var(--rule);margin:0 auto 2px}
+.pointer{position:absolute;top:-2px;transform:translateX(-50%);color:var(--signal);font-size:13px}
+
+.split{display:flex;gap:0;margin:34px 0 0;border-top:1px solid var(--rule);flex-wrap:wrap}
+.half{flex:1 1 240px;padding:18px 20px 18px 0;border-bottom:1px solid var(--rule-soft)}
+.half + .half{padding-left:20px;border-left:1px solid var(--rule-soft)}
+.half h3{font-size:15px;margin:0 0 4px;font-weight:600}
+.half .big{font-family:var(--mono);font-size:27px;margin:6px 0 4px}
+.half p{margin:0;font-size:14px;color:var(--ink-2);max-width:40ch}
+
+.verdict{font-family:var(--serif);font-size:19px;line-height:1.5;margin:30px 0 0;max-width:58ch}
+.flag{
+  border:1px solid var(--signal);border-left-width:3px;padding:16px 18px;margin:26px 0 0;background:var(--card);
+}
+.flag h3{margin:0 0 6px;font-size:16px;color:var(--signal)}
+.flag p{margin:0;font-size:15px;color:var(--ink-2);max-width:58ch}
+
+h2.sec{font-family:var(--serif);font-size:22px;font-weight:400;margin:46px 0 4px;letter-spacing:-.01em}
+.sec-sub{color:var(--ink-3);font-size:14px;margin:0 0 16px;max-width:62ch}
+
+.rows{border-top:1px solid var(--rule)}
+.row{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--rule-soft);align-items:flex-start}
+.row-v{
+  flex:0 0 26px;height:26px;border-radius:50%;font-family:var(--mono);font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+}
+.v0{background:var(--signal);color:#fff}
+.v1{background:#EBD9A8;color:#5C4708}
+.v2{background:var(--good);color:#fff}
+.row-b{flex:1}
+.row-t{font-size:15.5px;line-height:1.4}
+.row-f{font-size:14px;color:var(--ink-2);margin-top:3px;max-width:58ch}
+.row-c{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:3px}
+
+.bridge{border:1px solid var(--rule);background:var(--card);padding:24px 22px;margin:44px 0 0}
+.bridge h2{font-family:var(--serif);font-size:23px;font-weight:400;margin:0 0 10px;letter-spacing:-.01em}
+.bridge p{margin:0 0 12px;color:var(--ink-2);max-width:58ch}
+.bridge p:last-of-type{margin-bottom:0}
+.bridge strong{color:var(--ink);font-weight:600}
+
+.lead{margin:22px 0 0;padding-top:20px;border-top:1px solid var(--rule-soft)}
+.lead .fields{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+.lead .fields > div{flex:1 1 200px}
+.consent{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;color:var(--ink-2);margin:8px 0 14px;max-width:58ch}
+.consent input{margin-top:3px}
+.status{font-size:14px;margin:10px 0 0}
+.status.ok{color:var(--good)}
+.status.err{color:var(--signal)}
+
+.fine{font-size:13px;color:var(--ink-3);margin:40px 0 0;max-width:66ch;border-top:1px solid var(--rule-soft);padding-top:16px}
+.fine p{margin:0 0 9px}
+.fine a{color:var(--ink-2)}
+
+@media (max-width:620px){
+  .lede{font-size:25px}
+  .q{font-size:22px}
+  .score-n{font-size:50px}
+  .seg-n{font-size:9px}
+  .half + .half{padding-left:0;border-left:0}
+  .half{padding-right:0}
+  .opt-k{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{
+  .strip-hold,.nav,.lead,.btn,.masthead .org{display:none!important}
+  body{background:#fff;font-size:12pt}
+  .bridge,.flag{border-color:#999}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-in">
+    <h1>Kurzfristhandel Entscheidungsgeschwindigkeit – Self-Check</h1>
+    <div class="org" id="org"></div>
+  </div>
+</header>
+
+<div class="strip-hold" id="striphold" hidden>
+  <div class="strip-in">
+    <div class="strip" id="strip" role="group" aria-label="Question progress"></div>
+    <div class="strip-key">
+      <span id="stripcount">No questions answered</span>
+      <span>Voller Balken = 2, halber Balken = 1, rote Linie = 0</span>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+<!-- ============ INTRO ============ -->
+<section class="panel on intro" id="p-intro">
+  <h2 class="lede">Von der geänderten Prognose zur nachvollziehbaren Entscheidung – wie schnell wirklich?</h2>
+  <p>Zehn Fragen dazu, wie schnell eine Prognose- oder Asset-Änderung auf Ihrem Desk zu einer quantifizierten, umsetzbaren Entscheidung wird – und ob diese Entscheidung noch erklärt werden kann, nachdem der Markt sich weitergedreht hat.</p>
+  <p>Die meisten Desks sind halbwegs schnell. Nur wenige können im Nachhinein belegen, warum genau eine bestimmte Entscheidung so getroffen wurde.</p>
+
+  <dl class="facts">
+    <div class="fact"><dt>Zeitaufwand</dt><dd>Ca. zehn Minuten</dd></div>
+    <div class="fact"><dt>Am besten mit</dt><dd>Ein Kurzfrist- oder Intraday-Händler, der aus einer typischen Schicht heraus antwortet – nicht aus der besten.</dd></div>
+    <div class="fact"><dt>Umfang</dt><dd>Ein Desk nach dem anderen. Beginnen Sie mit dem, bei dem ein verpasstes Zeitfenster am meisten kostet.</dd></div>
+    <div class="fact"><dt>Ihre Daten</dt><dd>Antworten bleiben in diesem Browser. Keine Cookies, keine Drittanbieter-Anfragen, nichts wird gesendet, es sei denn, Sie entscheiden sich dafür.</dd></div>
+  </dl>
+
+  <div class="field">
+    <label for="sysname">Welchen Desk bewerten Sie?</label>
+    <input type="text" id="sysname" placeholder="z.B. Intraday Strom, DACH" autocomplete="off">
+    <p class="hint">Optional. Wird nur zur Beschriftung Ihres Ergebnisses verwendet.</p>
+  </div>
+
+  <div class="nav">
+    <button class="btn" id="start">Self-Check starten</button>
+  </div>
+</section>
+
+<!-- ============ QUESTION ============ -->
+<section class="panel" id="p-q" aria-live="polite">
+  <div class="qhead">
+    <span class="qnum" id="qnum"></span>
+    <span class="qtag" id="qtag" hidden>Kontinuierliche Nachweise</span>
+  </div>
+  <h2 class="q" id="qtitle"></h2>
+  <p class="qsub" id="qsub"></p>
+
+  <div class="opts" id="opts" role="radiogroup" aria-labelledby="qtitle"></div>
+
+  <div class="aside">
+    <p class="said" id="qinspector"></p>
+    <p id="qnote"></p>
+  </div>
+  <p class="clause" id="qclause"></p>
+
+  <div class="nav">
+    <button class="btn btn-q" id="back">Zurück</button>
+    <button class="btn" id="next" disabled>Weiter</button>
+    <span class="navnote">Taste 1, 2 oder 3 zum Antworten</span>
+  </div>
+</section>
+
+<!-- ============ RESULTS ============ -->
+<section class="panel" id="p-res">
+  <div class="readout">
+    <div class="score-row">
+      <span class="score-n" id="scoreN">0</span>
+      <span class="score-of">von 20</span>
+      <span class="score-band" id="scoreBand"></span>
+    </div>
+    <div class="scale">
+      <div class="scale-track" id="scaleTrack"></div>
+      <div class="scale-marks" id="scaleMarks"></div>
+    </div>
+    <p class="hint" id="scoreFor"></p>
+  </div>
+
+  <div class="split">
+    <div class="half">
+      <h3>Prozessgestaltung</h3>
+      <div class="big" id="ptScore"></div>
+      <p>Entscheidungsrahmen, Systemanzahl, Mandat und Zuständigkeit. Beantwortbar anhand der aktuellen Aufstellung.</p>
+    </div>
+    <div class="half">
+      <h3>Kontinuierliche Nachweise</h3>
+      <div class="big" id="ctScore"></div>
+      <p>Tatsächliche Reaktionsgeschwindigkeit, Aktualitätsbewusstsein, Reproduzierbarkeit und was beim Schichtwechsel wirklich passiert.</p>
+    </div>
+  </div>
+
+  <p class="verdict" id="verdict"></p>
+
+  <div class="flag" id="critFlag" hidden>
+    <h3 id="critTitle"></h3>
+    <p id="critBody"></p>
+  </div>
+
+  <h2 class="sec">Wo anfangen</h2>
+  <p class="sec-sub" id="weakSub"></p>
+  <div class="rows" id="weakRows"></div>
+
+  <h2 class="sec">Alle zehn Antworten</h2>
+  <div class="rows" id="allRows"></div>
+
+  <div class="bridge">
+    <h2 id="bridgeH">Das Muster in Ihren kontinuierlichen Nachweis-Antworten</h2>
+    <p id="bridgeP1"></p>
+    <p>Jede dieser Fragen ist für eine ideale Schicht leicht zu beantworten, für eine typische unter Druck aber schwer. Ein Desk kann im Moment schnell sein und trotzdem eine Woche später nicht mehr rekonstruieren können, warum eine Entscheidung richtig war – oder was genau entschieden wurde.</p>
+    <p>Diese Lücke schließt sich nicht durch schnelleres Handeln. Sie schließt sich, wenn Geschwindigkeit und Nachvollziehbarkeit im selben Schritt entstehen: Positionsauswirkung, Preiskontext und Entscheidungsprotokoll werden gemeinsam, aus einem fixen Snapshot, im Moment der Entscheidung erzeugt – nicht nachträglich aus dem Gedächtnis und separaten Systemen rekonstruiert.</p>
+
+    <div class="lead" id="leadBlock">
+      <p class="hint" style="margin-bottom:14px" id="leadIntro">Senden Sie sich dieses Ergebnis – wir melden uns nur, wenn Sie es wünschen.</p>
+      <div class="fields">
+        <div>
+          <label for="ld-name" class="hint" style="margin:0 0 6px">Name</label>
+          <input type="text" id="ld-name" autocomplete="name">
+        </div>
+        <div>
+          <label for="ld-email" class="hint" style="margin:0 0 6px">Geschäftliche E-Mail</label>
+          <input type="email" id="ld-email" autocomplete="email">
+        </div>
+      </div>
+      <div class="fields">
+        <div>
+          <label for="ld-org" class="hint" style="margin:0 0 6px">Unternehmen</label>
+          <input type="text" id="ld-org" autocomplete="organization">
+        </div>
+      </div>
+      <label class="consent"><input type="checkbox" id="ld-consent"> <span id="consentText"></span></label>
+      <div class="nav" style="margin-top:0">
+        <button class="btn btn-sig" id="ld-send">Ergebnis zusenden</button>
+        <button class="btn btn-q" id="ld-book">Gespräch buchen</button>
+      </div>
+      <p class="status" id="ld-status" role="status"></p>
+    </div>
+  </div>
+
+  <div class="nav" style="margin-top:28px">
+    <button class="btn btn-q" id="copyBtn">Ergebnis als Text kopieren</button>
+    <button class="btn btn-q" id="printBtn">Drucken oder als PDF speichern</button>
+    <button class="btn btn-q" id="againBtn">Einen anderen Desk bewerten</button>
+  </div>
+
+  <div class="fine">
+    <p><strong>Was dieser Check nicht abdeckt.</strong> Zehn Fragen können nicht den gesamten Workflow eines Trading-Desks erfassen. Nicht berücksichtigt: Algo-Execution-Strategie, Marktzugangs-Technologie, Settlement und übergreifendes Risikomanagement. Betrachten Sie dies als Gesprächseinstieg, nicht als vollständiges Audit.</p>
+    <p>Dieses Tool spiegelt die gängige Praxis auf Kurzfrist- und Intraday-Trading-Desks in DACH-Strommärkten (Stand 2026) wider, basierend auf direkten Desk-Gesprächen. Es bewertet weder einen bestimmten Anbieter noch ein System und stellt keine Handels-, Rechts- oder Regulierungsberatung dar.</p>
+    <p>Dieser Self-Check ist ein Orientierungsinstrument. Er stellt keine kommerzielle oder regulatorische Stellungnahme dar und ersetzt kein strukturiertes Entdeckungsgespräch.</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* ============================================================
+   CONFIG — edit this block, nothing else needs to change.
+   ============================================================ */
+const CONFIG = {
+  orgName:      "Adastra Energy",
+  logoUrl:      "",
+  accent:       "#F9423A",
+  bookingUrl:   "mailto:sofia.trojanowska@adastragrp.com?subject=Book%20a%20conversation%20-%20Adastra%20Energy%20Trading%20Self-Check",
+  contactEmail: "sofia.trojanowska@adastragrp.com",
+  leadEndpoint: "https://formspree.io/f/mrpevjwk",
+  privacyUrl:   "",
+  showLeadForm: true
+};
+/* ========================================================== */
+
+const Q = [
+  { n:1, cont:true, tag:"Erkennungsgeschwindigkeit",
+    title:"Wenn sich eine Prognose oder Asset-Verfügbarkeit ändert, wie schnell kennen Sie die resultierende Positionsauswirkung in MWh?",
+    sub:"Nicht wann Sie es herausfinden könnten – wann Sie es tatsächlich, typischerweise tun.",
+    opts:["Innerhalb von Minuten, automatisch berechnet.",
+          "Erst nach manueller Überprüfung von zwei oder drei Systemen.",
+          "Oft erst in der nächsten Schicht oder im nächsten Report."],
+    skeptic:"Die Prognose hat sich gerade verändert. Was ist Ihre Positionsauswirkung, jetzt, ohne etwas nachzuschauen?",
+    note:"",
+    fix:"Stoppen Sie diese Woche einmal die Zeit eines echten Prognoseänderungs-Events, von Beginn bis zur Positionsauswirkung – mit der Stoppuhr, nicht als Schätzung." },
+
+  { n:2, cont:true, tag:"Sichtbarkeit des Entscheidungsfensters",
+    title:"Können Sie auf einen Blick sehen, wie viel Zeit bis zur nächsten relevanten Gate Closure verbleibt, neben der betroffenen Position?",
+    sub:"Beides zusammen, an einem Ort – nicht Marktsystem und Positionssystem separat.",
+    opts:["Ja, immer zusammen sichtbar.",
+          "Nur durch separate Überprüfung des Marktsystems.",
+          "Nein, diese werden überhaupt nicht zusammen verfolgt."],
+    skeptic:"Wie viele Minuten haben Sie noch, um auf diese Position zu reagieren, jetzt gerade?",
+    note:"",
+    fix:"Fügen Sie einen Countdown neben der betroffenen Position auf Ihrem Hauptbildschirm ein – eine kleine UI-Änderung, oft die wirkungsvollste, die möglich ist." },
+
+  { n:3, cont:false, tag:"Quantifizierte Optionen",
+    title:"Haben Sie eine Standardmethode, um zwei oder drei konkrete Optionen (z.B. jetzt hedgen / warten / teilweise) vor der Entscheidung zu quantifizieren?",
+    sub:"Mit zugehörigen Kosten und Restrisiko – nicht nur still angewandtes Händler-Urteil.",
+    opts:["Ja, konsequent, mit angezeigten Kosten und Restrisiko.",
+          "Informell – Händler-Urteil, jedes Mal von vorne.",
+          "Nein, Entscheidungen werden nicht auf diese Weise in Optionen quantifiziert."],
+    skeptic:"What were die anderen zwei Optionen, die Sie nicht gewählt haben, und was hätte jede gekostet?",
+    note:"",
+    fix:"Next tiSie beim nächsten wesentlichen Entscheid die zwei nicht gewählten Optionen und den Grund auf – tun Sie das fünfmal und ein Muster wird sichtbar." },
+
+  { n:4, cont:true, tag:"Reproduzierbarkeit",
+    title:"Wenn Sie morgen gefragt werden, warum Sie heute eine bestimmte Intraday-Entscheidung getroffen haben, könnten Sie die genauen Zahlen und Annahmen dahinter rekonstruieren?",
+    sub:"Die tatsächlichen Zahlen und Eingaben – nicht eine allgemeine Erinnerung an die Begründung.",
+    opts:["Ja, vollständig aus gespeicherten Aufzeichnungen reproduzierbar.",
+          "Teilweise – aus dem Gedächtnis oder informellen Notizen.",
+          "Nein, es wird schlicht nicht erfasst."],
+    skeptic:"Reconstruct yesterden Sie für mich die Entscheidung von gestern 15:30, mit den tatsächlichen Zahlen.",
+    note:"",
+    fix:"Beginnen Sie, den Snapshot, die erwogenen Optionen und die gewählte Begründung nur für Ihren hochwertigsten Entscheidungstyp pro Schicht zu erfassen." },
+
+  { n:5, cont:true, tag:"Schichtwechsel",
+    title:"Wie viel Kontext geht beim Schichtwechsel typischerweise verloren – offene Positionen, Annahmen, ausstehende Entscheidungen?",
+    sub:"Was tatsächlich bei einem normalen, beschäftigten Wechsel passiert – nicht beim idealen.",
+    opts:["Wenig bis keiner – strukturierter Übergabeprozess vorhanden.",
+          "Einiger – Qualität hängt stark davon ab, wer übergibt.",
+          "Viel – Dinge werden häufig auf die harte Tour wiederentdeckt."],
+    skeptic:"Was ist noch offen aus der letzten Schicht, was Ihnen noch niemand erwähnt hat?",
+    note:"",
+    fix:"Fügen Sie Ihrer Übergabe ein Pflichtfeld hinzu: \"Offene Positionen, mit der jeweiligen Annahme dahinter.\" Das allein fängt den größten Teil des Verlustes auf." },
+
+  { n:6, cont:false, tag:"Systemfragmentierung",
+    title:"Wie viele separate Systeme müssen Sie typischerweise prüfen, um eine Prognose- oder Asset-Änderung zu bewerten?",
+    sub:"Eine realistische Zahl aus einem normalen Tag, kein Best Case.",
+    opts:["Eines – eine einheitliche Ansicht.",
+          "Zwei bis drei.",
+          "Vier oder mehr."],
+    skeptic:"Führen Sie mich durch jeden Bildschirm, den Sie für die letzte Änderung genutzt haben.",
+    note:"",
+    fix:"Kartieren Sie den tatsächlichen Klickpfad für Ihre letzten drei Entscheidungen – die Anzahl der Systeme ist meist höher als Menschen aus dem Gedächtnis schätzen." },
+
+  { n:7, cont:true, tag:"Aktualitätsbewusstsein",
+    title:"Wissen Sie im Moment Ihrer Entscheidung, ob Ihre Marktdaten und Prognose-Inputs aktuell sind, oder wie veraltet sie sein könnten?",
+    sub:"Bekannt, nicht angenommen – eine echte Antwort, nicht \"wahrscheinlich in Ordnung\".",
+    opts:["Ja, Aktualität ist immer sichtbar.",
+          "Als aktuell angenommen, sofern niemand etwas meldet.",
+          "Wird überhaupt nicht verfolgt."],
+    skeptic:"Wie alt ist die Prognose hinter dieser Zahl, jetzt gerade?",
+    note:"",
+    fix:"Fügen Sie Ihren Prognose- und Preisfeeds einen sichtbaren Zeitstempel der letzten Aktualisierung hinzu – die günstigste Lösung auf dieser Liste und oft die meistübersehene." },
+
+  { n:8, cont:false, tag:"KI-Berechnungsgrenze",
+    title:"Is there eine klare, durchgesetzte Grenze in Ihrer Organisation zwischen \"ein Tool berechnet die Exposure\" und \"ein Tool erkplains an exposure that was calculated deterministically\"?",
+    sub:"Eine echte Unterscheidung, auf der jemand besteht – keine philosophische Feinheit.",
+    opts:["Ja, explizit und Voraussetzung für jedes Tool, das wir einführen würden.",
+          "Noch nicht wirklich explizit durchdacht.",
+          "No, and it likely wouldn’t matter either way to us."],
+    skeptic:"If an AI tool gave you the right number but couldn’t show its calculation, would you use it?",
+    note:"",
+    fix:"Schreiben Sie diese Anforderung auf, bevor Sie das nächste AI-Tool evaluieren – sie filtert mehr Anbieter heraus als jede Funktionsliste." },
+
+  { n:9, cont:false, tag:"Kaufmandat",
+    title:"Wer hat derzeit, wenn überhaupt, sowohl das Budget als auch das Mandat, ein Entscheidungsunterstützungs-Tool für diesen Desk zu kaufen?",
+    sub:"Ein echter Name oder eine Rolle – nicht \"wahrscheinlich jemand im Management\".",
+    opts:["Klarer Verantwortlicher – z.B. Head of Trading oder Trading Innovation.",
+          "Unklar – müsste erst identifiziert werden.",
+          "Ein solches Mandat existiert heute nicht."],
+    skeptic:"Wenn das morgen genehmigt wird, aus wessen Budget käme es?",
+    note:"",
+    fix:"Stellen Sie diese Frage intern, bevor Sie mit einem Anbieter sprechen – sie verändert, wie die gesamte Evaluierung durchgeführt werden sollte." },
+
+  { n:10, cont:true, tag:"Reaktiv vs. proaktiv",
+    title:"Wenn sich die Marktbedingungen in den nächsten zwölf Minuten ändern, wie sicher sind Sie, dass die richtige Person es rechtzeitig sieht, um zu handeln?",
+    sub:"Vertrauen basierend darauf, wie es heute tatsächlich funktioniert, nicht wie es funktionieren soll.",
+    opts:["Sehr sicher – systematisches Alerting vorhanden.",
+          "Einigermaßen – hängt davon ab, wer gerade was beobachtet.",
+          "Nicht sehr – oft reaktiv, erst im Nachhinein bemerkt."],
+    skeptic:"Wenn sich das jetzt ändert und Sie nicht am Desk sind, würde das jemand bemerken?",
+    note:"",
+    fix:"Identifizieren Sie Ihren wichtigsten Alert-Typ und bestätigen Sie ehrlich, wer ihn außerhalb der normalen Geschäftszeiten tatsächlich sehen würde." }
+];
+
+const BANDS = [
+  { min:17, name:"Schnell und nachvollziehbar", text:"Sie reagieren schnell und können im Nachhinein zeigen warum. Das verbleibende Risiko besteht vor allem darin, dieses Niveau zu halten, wenn Volumen und Teamgröße wachsen – was mit zwei erfahrenen Händlern funktioniert, überlebt nicht immer einen größeren Desk." },
+  { min:12, name:"Schnell, aber schwer nachzuweisen", text:"Entscheidungen fallen schnell, aber die Begründung im Nachhinein zu rekonstruieren ist schwieriger als es sein sollte. Das ist das häufigste Muster auf erfahrenen Desks – Geschwindigkeit wurde vor Jahren gelöst, Reproduzierbarkeit nie." },
+  { min:6, name:"Langsam und fragmentiert", text:"Zu viel im Entscheidungszyklus hängt noch davon ab, verschiedene Systeme manuell zu prüfen. Die untenstehenden Antworten sind nach Handlungspriorität geordnet." },
+  { min:0, name:"Reaktiv", text:"Entscheidungen werden größtenteils im Nachhinein getroffen, nicht mehr innerhalb des relevanten Zeitfensters. Eine strukturierte Analyse lohnt sich, wo im Zyklus die meiste Zeit verloren geht." }
+];
+
+const CRITICAL = [1, 4, 7];
+
+/* ---------------- state ---------------- */
+const NQ = Q.length;
+const MAXSCORE = NQ * 2;
+const answers = new Array(NQ).fill(null);
+let cur = 0;
+let system = "";
+
+/* ---------------- helpers ---------------- */
+const $ = id => document.getElementById(id);
+const show = id => {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("on"));
+  $(id).classList.add("on");
+  window.scrollTo(0, 0);
+};
+
+/* ---------------- config application ---------------- */
+document.documentElement.style.setProperty("--signal", CONFIG.accent);
+if (CONFIG.logoUrl) {
+  $("org").innerHTML = '<img src="' + CONFIG.logoUrl + '" alt="' + CONFIG.orgName + '">';
+} else {
+  $("org").textContent = CONFIG.orgName;
+}
+$("consentText").innerHTML = "Ich stimme zu, dass " + CONFIG.orgName + " mich zu diesem Ergebnis kontaktiert." +
+  (CONFIG.privacyUrl ? ' <a href="' + CONFIG.privacyUrl + '" target="_blank" rel="noopener">Privacy notice</a>.' : "");
+if (!CONFIG.showLeadForm) $("leadBlock").hidden = true;
+
+/* ---------------- progress strip ---------------- */
+function buildStrip(){
+  const s = $("strip");
+  s.innerHTML = "";
+  Q.forEach((q, i) => {
+    const b = document.createElement("button");
+    b.className = "seg";
+    b.type = "button";
+    b.innerHTML = (q.cont ? '<span class="seg-c"></span>' : '') +
+                  '<span class="seg-bar"><span class="seg-fill"></span></span>' +
+                  '<span class="seg-n">' + q.n + '</span>';
+    b.setAttribute("aria-label", "Question " + q.n + ", nicht beantwortet");
+    b.addEventListener("click", () => { if (answers[i] !== null) goTo(i); });
+    s.appendChild(b);
+  });
+}
+function paintStrip(){
+  const segs = $("strip").children;
+  let done = 0;
+  Q.forEach((q, i) => {
+    const el = segs[i];
+    const v = answers[i];
+    if (v === null) { el.removeAttribute("data-v"); el.removeAttribute("data-answered"); }
+    else { el.setAttribute("data-v", v); el.setAttribute("data-answered", "1"); done++; }
+    el.setAttribute("data-cur", i === cur ? "1" : "0");
+    el.setAttribute("aria-label", "Frage " + q.n + (v === null ? ", nicht beantwortet" : ", bewertet " + v));
+  });
+  $("stripcount").textContent = done === 0 ? "Keine Fragen beantwortet"
+    : done + " von " + NQ + " beantwortet" + (system ? "  —  " + system : "");
+}
+
+/* ---------------- question rendering ---------------- */
+function goTo(i){
+  cur = i;
+  const q = Q[i];
+  $("qnum").textContent = "Frage " + q.n + " von " + NQ;
+  $("qtag").hidden = !q.cont;
+  $("qtitle").textContent = q.title;
+  $("qsub").textContent = q.sub;
+  $("qinspector").textContent = "“" + q.skeptic + "”";
+  $("qnote").textContent = q.note;
+  $("qnote").hidden = !q.note;
+  $("qclause").textContent = q.tag;
+
+  const box = $("opts");
+  box.innerHTML = "";
+  [2,1,0].forEach((val, idx) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "opt";
+    b.setAttribute("role","radio");
+    b.setAttribute("aria-checked", answers[i] === val ? "true" : "false");
+    b.innerHTML = '<span class="opt-v">' + val + '</span>' +
+                  '<span class="opt-t">' + q.opts[idx] + '</span>' +
+                  '<span class="opt-k">' + (idx + 1) + '</span>';
+    b.addEventListener("click", () => choose(val));
+    box.appendChild(b);
+  });
+
+  $("back").disabled = false;
+  $("back").textContent = i === 0 ? "Zurück zum Start" : "Zurück";
+  $("next").disabled = answers[i] === null;
+  $("next").textContent = i === NQ - 1 ? "Mein Ergebnis anzeigen" : "Weiter";
+  paintStrip();
+  show("p-q");
+}
+
+function choose(val){
+  answers[cur] = val;
+  [...$("opts").children].forEach(el =>
+    el.setAttribute("aria-checked", el.querySelector(".opt-v").textContent == val ? "true" : "false"));
+  $("next").disabled = false;
+  paintStrip();
+}
+
+function advance(){
+  if (answers[cur] === null) return;
+  if (cur === NQ - 1) { renderResults(); show("p-res"); }
+  else goTo(cur + 1);
+}
+
+/* ---------------- results ---------------- */
+function totals(){
+  const total = answers.reduce((a,b) => a + (b || 0), 0);
+  let ct = 0, ctMax = 0, pt = 0, ptMax = 0;
+  Q.forEach((q,i) => {
+    if (q.cont) { ct += answers[i]; ctMax += 2; } else { pt += answers[i]; ptMax += 2; }
+  });
+  return { total, ct, ctMax, pt, ptMax };
+}
+
+function renderResults(){
+  const t = totals();
+  const band = BANDS.find(b => t.total >= b.min);
+
+  $("scoreN").textContent = t.total;
+  $("scoreBand").textContent = band.name;
+  $("scoreFor").textContent = system ? "Bewertung für " + system : "";
+  $("verdict").textContent = band.text;
+  $("ptScore").textContent = t.pt + " / " + t.ptMax;
+  $("ctScore").textContent = t.ct + " / " + t.ctMax;
+
+  const track = $("scaleTrack");
+  track.innerHTML = "";
+  for (let i = 1; i <= MAXSCORE; i++){
+    const s = document.createElement("span");
+    if (i <= t.total) s.className = "lit";
+    track.appendChild(s);
+  }
+  const marks = $("scaleMarks");
+  marks.innerHTML = "";
+  [[0,"0"],[6,"6"],[12,"12"],[17,"17"],[20,"20"]].forEach(([v,label]) => {
+    const d = document.createElement("div");
+    d.className = "mark";
+    d.style.left = (v / MAXSCORE * 100) + "%";
+    d.innerHTML = "<i></i>" + label;
+    marks.appendChild(d);
+  });
+  const p = document.createElement("div");
+  p.className = "pointer";
+  p.style.left = (t.total / MAXSCORE * 100) + "%";
+  p.textContent = "▲";
+  marks.appendChild(p);
+
+  const zeros = CRITICAL.filter(n => answers[n-1] === 0);
+  const lows  = CRITICAL.filter(n => answers[n-1] <= 1);
+  if (zeros.length){
+    $("critFlag").hidden = false;
+    $("critTitle").textContent = "Ein Hinweis zur Gewichtung";
+    $("critBody").textContent = "You scored zero on question" + (zeros.length > 1 ? "s " : " ") +
+      zeros.join(", ") + ". Reproduzierbarkeit, Aktualitätsbewusstsein und rohe Entscheidungsgeschwindigkeit sind die Punkte, an denen ein schneller Desk zum nicht vertretbaren wird – eine Null bei einem von ihnen überwiegt ein gutes Gesamtergebnis anderswo.";
+  } else if (lows.length >= 2){
+    $("critFlag").hidden = false;
+    $("critTitle").textContent = "Ein Hinweis zur Gewichtung";
+    $("critBody").textContent = "Questions " + CRITICAL.join(", ") + " carry more weight than the rest, and you scored 1 or below on " +
+      lows.length + " of them. Diese drei haben mehr Gewicht als die anderen, denn hier weichen Geschwindigkeit und Nachvollziehbarkeit als erstes auseinander.";
+  } else {
+    $("critFlag").hidden = true;
+  }
+
+  const ranked = Q.map((q,i) => ({ q, v:answers[i], i }))
+                  .sort((a,b) => a.v - b.v || (b.q.cont - a.q.cont) || a.i - b.i)
+                  .slice(0,3);
+  $("weakSub").textContent = "Ihre drei schwächsten Antworten mit dem jeweils ersten Schritt.";
+  $("weakRows").innerHTML = ranked.map(r =>
+    '<div class="row"><span class="row-v v' + r.v + '">' + r.v + '</span><div class="row-b">' +
+    '<div class="row-t">' + r.q.n + '. ' + esc(r.q.title) + '</div>' +
+    '<div class="row-f">' + esc(r.q.fix) + '</div>' +
+    '<div class="row-c">' + r.q.tag + '</div></div></div>').join("");
+
+  $("allRows").innerHTML = Q.map((q,i) =>
+    '<div class="row"><span class="row-v v' + answers[i] + '">' + answers[i] + '</span><div class="row-b">' +
+    '<div class="row-t">' + q.n + '. ' + esc(q.title) + '</div>' +
+    '<div class="row-c">' + q.tag + (q.cont ? "  ·  kontinuierlicher Nachweis" : "") + '</div></div></div>').join("");
+
+  const contTotal = Q.filter(q => q.cont).length;
+  const contLow = Q.filter((q,i) => q.cont && answers[i] <= 1).length;
+  $("bridgeP1").textContent = contLow === 0
+    ? "Sie haben bei allen " + contTotal + " Fragen zu kontinuierlichen Nachweisen gut abgeschnitten, was ungewöhnlich ist. Das Wichtigste ist jetzt, dass das so bleibt – diese Antworten veralten am schnellsten zwischen den Überprüfungen."
+    : "You scored 1 or 0 on " + contLow + " of the " + contTotal + " continuous-evidence questions" +
+      (contLow >= Math.ceil(contTotal/2) ? ", which is the common pattern and the expensive one." : ".");
+}
+
+function esc(s){ return String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+/* ---------------- export ---------------- */
+function resultText(){
+  const t = totals();
+  const band = BANDS.find(b => t.total >= b.min);
+  const lines = [];
+  lines.push("KURZFRISTHANDEL ENTSCHEIDUNGSGESCHWINDIGKEIT – ERGEBNIS");
+  if (system) lines.push("Bewertet für: " + system);
+  lines.push("Datum: " + new Date().toISOString().slice(0,10));
+  lines.push("");
+  lines.push("Gesamt: " + t.total + " of " + MAXSCORE + "  (" + band.name + ")");
+  lines.push("Prozessgestaltung: " + t.pt + " of " + t.ptMax);
+  lines.push("Kontinuierliche Nachweise: " + t.ct + " of " + t.ctMax);
+  lines.push("");
+  Q.forEach((q,i) => {
+    lines.push(q.n + ". [" + answers[i] + "] " + q.title + (q.cont ? "  (kontinuierlicher Nachweis)" : ""));
+  });
+  lines.push("");
+  lines.push("Bewertung: 2 = ja, belegt. 1 = teilweise / informell. 0 = nein oder unbekannt.");
+  return lines.join("\n");
+}
+
+/* ---------------- lead capture ---------------- */
+function sendLead(){
+  const name = $("ld-name").value.trim();
+  const email = $("ld-email").value.trim();
+  const org = $("ld-org").value.trim();
+  const st = $("ld-status");
+  st.className = "status";
+
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
+    st.className = "status err"; st.textContent = "Bitte geben Sie eine gültige geschäftliche E-Mail-Adresse ein."; return;
+  }
+  if (!$("ld-consent").checked){
+    st.className = "status err"; st.textContent = "Bitte aktivieren Sie das Zustimmungsfeld, damit wir antworten dürfen."; return;
+  }
+
+  const t = totals();
+  const payload = {
+    name, email, company: org, system,
+    total: t.total, maxScore: MAXSCORE,
+    pointInTime: t.pt, pointInTimeMax: t.ptMax,
+    continuous: t.ct, continuousMax: t.ctMax,
+    band: BANDS.find(b => t.total >= b.min).name,
+    answers: Q.map((q,i) => ({ question:q.n, title:q.title, score:answers[i], continuous:q.cont })),
+    submittedAt: new Date().toISOString(),
+    source: "kurzfristhandel-self-check-de"
+  };
+
+  if (!CONFIG.leadEndpoint){
+    const body = encodeURIComponent(resultText() + "\n\nName: " + name + "\nCompany: " + org + "\nEmail: " + email);
+    window.location.href = "mailto:" + CONFIG.contactEmail +
+      "?subject=" + encodeURIComponent("Kurzfristhandel Entscheidungsgeschwindigkeit – Self-Check result — " + (org || email)) + "&body=" + body;
+    st.className = "status ok";
+    st.textContent = "Ihr E-Mail-Programm sollte sich mit dem Ergebnis öffnen.";
+    return;
+  }
+
+  st.textContent = "Wird gesendet…";
+  fetch(CONFIG.leadEndpoint, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json", "Accept":"application/json" },
+    body: JSON.stringify(payload)
+  }).then(r => {
+    if (!r.ok) throw new Error(r.status);
+    // Open prospect's own email client with full results so they receive a copy
+    const resultBody = resultText() + "\n\nName: " + name + (org ? "\nCompany: " + org : "");
+    const mailtoUrl = "mailto:" + email
+      + "?subject=" + encodeURIComponent("Ihr Self-Check-Ergebnis – Kurzfristhandel Entscheidungsgeschwindigkeit")
+      + "&body=" + encodeURIComponent(resultBody);
+    window.open(mailtoUrl, "_blank");
+    st.className = "status ok";
+    st.textContent = "Gespeichert. Ihr E-Mail-Programm sollte sich mit Ihren Ergebnissen öffnen – bitte senden Sie diese Nachricht, um eine Kopie zu behalten.";
+    $("ld-send").disabled = true;
+  }).catch(() => {
+    // Formspree failed — fall back to mailto for both parties
+    const resultBody = resultText() + "\n\nName: " + name + (org ? "\nCompany: " + org : "");
+    const mailtoUrl = "mailto:" + email
+      + "?cc=" + encodeURIComponent(CONFIG.contactEmail)
+      + "&subject=" + encodeURIComponent("Self-Check-Ergebnis – Kurzfristhandel Entscheidungsgeschwindigkeit")
+      + "&body=" + encodeURIComponent(resultBody);
+    window.open(mailtoUrl, "_blank");
+    st.className = "status ok";
+    st.textContent = "Ihr E-Mail-Programm sollte sich mit Ihren Ergebnissen öffnen – bitte senden Sie diese Nachricht, um eine Kopie zu behalten.";
+  });
+}
+
+/* ---------------- wiring ---------------- */
+buildStrip();
+
+$("start").addEventListener("click", () => {
+  system = $("sysname").value.trim();
+  $("striphold").hidden = false;
+  goTo(0);
+});
+
+$("next").addEventListener("click", advance);
+$("back").addEventListener("click", () => {
+  if (cur === 0){ $("striphold").hidden = true; show("p-intro"); }
+  else goTo(cur - 1);
+});
+
+document.addEventListener("keydown", e => {
+  if (!$("p-q").classList.contains("on")) return;
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "1") choose(2);
+  if (e.key === "2") choose(1);
+  if (e.key === "3") choose(0);
+  if (e.key === "Enter" && answers[cur] !== null) advance();
+  if (e.key === "ArrowLeft" && cur > 0) goTo(cur - 1);
+  if (e.key === "ArrowRight" && answers[cur] !== null) advance();
+});
+
+$("copyBtn").addEventListener("click", () => {
+  const txt = resultText();
+  const done = () => { $("copyBtn").textContent = "Kopiert"; setTimeout(() => $("copyBtn").textContent = "Ergebnis als Text kopieren", 2000); };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, () => fallbackCopy(txt, done));
+  else fallbackCopy(txt, done);
+});
+function fallbackCopy(txt, done){
+  const ta = document.createElement("textarea");
+  ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); done(); } catch(e){}
+  document.body.removeChild(ta);
+}
+
+$("printBtn").addEventListener("click", () => window.print());
+$("againBtn").addEventListener("click", () => {
+  answers.fill(null); cur = 0; system = ""; $("sysname").value = "";
+  $("ld-status").textContent = ""; $("ld-send").disabled = false;
+  $("striphold").hidden = true; paintStrip(); show("p-intro");
+});
+
+$("ld-send").addEventListener("click", sendLead);
+$("ld-book").addEventListener("click", () => window.open(CONFIG.bookingUrl, "_blank", "noopener"));
+</script>
+</body>
+</html>
